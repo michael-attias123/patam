@@ -22,14 +22,26 @@ public class Node {
     }
 
     // getters / setters
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getName() { 
+        return name; 
+    }
+    public void setName(String name) { 
+        this.name = name; 
+    }
 
-    public List<Node> getEdges() { return edges; }
-    public void setEdges(List<Node> edges) { this.edges = edges; }
+    public List<Node> getEdges() { 
+        return edges;
+    }
+    public void setEdges(List<Node> edges) { 
+        this.edges = edges; 
+    }
 
-    public Message getMessage() { return message; }
-    public void setMessage(Message message) { this.message = message; }
+    public Message getMessage() { 
+        return message; 
+    }
+    public void setMessage(Message message) { 
+        this.message = message; 
+    }
 
     // add an outgoing edge (no duplicates)
     public void addEdge(Node node) {

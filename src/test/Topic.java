@@ -20,7 +20,9 @@ public class Topic {
     }
 
     public void subscribe(Agent a) {
-        if (!subs.contains(a)) subs.add(a);
+        if (!subs.contains(a)) {
+            subs.add(a);
+        }
     }
 
     public void unsubscribe(Agent a) {
@@ -28,13 +30,18 @@ public class Topic {
     }
 
     public void publish(Message m) {
+        // notify subscribers one by one in an explicit block
         for (Agent a : subs) {
-            a.callback(name, m);
+            if (a != null) {
+                a.callback(name, m);
+            }
         }
     }
 
     public void addPublisher(Agent a) {
-        if (!pubs.contains(a)) pubs.add(a);
+        if (!pubs.contains(a)){
+             pubs.add(a);
+        } 
     }
 
     public void removePublisher(Agent a) {
@@ -43,10 +50,18 @@ public class Topic {
 
     // Expose subscribers/publishers for Graph construction (defensive unmodifiable copies)
     public List<Agent> getSubscribers() {
-        return Collections.unmodifiableList(new ArrayList<>(subs));
+        List<Agent> copy = new ArrayList<>();
+        for (Agent a : subs) {
+            copy.add(a);
+        }
+        return Collections.unmodifiableList(copy);
     }
 
     public List<Agent> getPublishers() {
-        return Collections.unmodifiableList(new ArrayList<>(pubs));
+        List<Agent> copy = new ArrayList<>();
+        for (Agent a : pubs) {
+            copy.add(a);
+        }
+        return Collections.unmodifiableList(copy);
     }
 }
