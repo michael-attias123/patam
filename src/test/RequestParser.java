@@ -1,7 +1,6 @@
 package test;
 
 import java.io.BufferedReader;
-import java.io.InputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -12,14 +11,13 @@ import java.util.Map;
 public class RequestParser {
 
     /**
-     * Parses an HTTP request from an InputStream.
+     * Parses an HTTP request from a BufferedReader.
      *
-     * @param inputStream the InputStream to read the request from
+     * @param reader the BufferedReader to read the request from
      * @return a RequestInfo object containing the parsed request data
      * @throws IOException if an I/O error occurs
      */
-    public static RequestInfo parseRequest(InputStream inputStream) throws IOException {
-        BufferedReader reader = new BufferedReader(new java.io.InputStreamReader(inputStream));
+    public static RequestInfo parseRequest(BufferedReader reader) throws IOException {
         String line = reader.readLine();
         if (line == null || line.isEmpty()) {
             throw new IOException("Empty request");
@@ -34,15 +32,19 @@ public class RequestParser {
         String uri = requestLineParts[1];
         String[] uriParts = uri.split("\\?");
         String path = uriParts[0];
-        String[] pathParts = path.split("/");
+        String[] pathParts = path.startsWith("/") ? path.substring(1).split("/") : path.split("/");
         Map<String, String> queryParams = new HashMap<>();
 
+        // Parse query parameters from URI
         if (uriParts.length > 1) {
             String[] params = uriParts[1].split("&");
             for (String param : params) {
+                if (param.isEmpty()) continue;
                 String[] keyValue = param.split("=", 2);
                 if (keyValue.length == 2) {
                     queryParams.put(keyValue[0], keyValue[1]);
+                } else {
+                    queryParams.put(keyValue[0], ""); // Handle keys without values
                 }
             }
         }
@@ -56,19 +58,31 @@ public class RequestParser {
             }
         }
 
-        // Parse content
-        int contentLength = headers.containsKey("Content-Length")
-                ? Integer.parseInt(headers.get("Content-Length"))
-                : 0;
-        byte[] content = new byte[contentLength];
-        if (contentLength > 0) {
-            int bytesRead = inputStream.read(content, 0, contentLength);
-            if (bytesRead < contentLength) {
-                throw new IOException("Incomplete content read");
+        // After headers: there may be additional parameter lines (e.g. filename=...) until a blank line
+        if (reader.ready()) {
+            while ((line = reader.readLine()) != null && !line.isEmpty()) {
+                // expect lines like key=value
+                String[] kv = line.split("=", 2);
+                if (kv.length == 2) {
+                    queryParams.put(kv[0], kv[1]);
+                }
             }
         }
 
-        return new RequestInfo(method, uri, pathParts, queryParams, headers, content);
+        // Read content if available (do not block): read until blank line or EOF
+        byte[] content;
+        if (reader.ready()) {
+            StringBuilder contentBuilder = new StringBuilder();
+            String contentLine;
+            while ((contentLine = reader.readLine()) != null && !contentLine.isEmpty()) {
+                contentBuilder.append(contentLine).append("\n");
+            }
+            content = contentBuilder.length() > 0 ? contentBuilder.toString().getBytes() : new byte[0];
+        } else {
+            content = new byte[0];
+        }
+
+        return new RequestInfo(method, uri, path, pathParts, queryParams, headers, content);
     }
 
     /**
@@ -77,14 +91,16 @@ public class RequestParser {
     public static class RequestInfo {
         public final String method;
         public final String uri;
+        public final String path;
         public final String[] pathParts;
         public final Map<String, String> queryParams;
         public final Map<String, String> headers;
         public final byte[] content;
 
-        public RequestInfo(String method, String uri, String[] pathParts, Map<String, String> queryParams, Map<String, String> headers, byte[] content) {
+        public RequestInfo(String method, String uri, String path, String[] pathParts, Map<String, String> queryParams, Map<String, String> headers, byte[] content) {
             this.method = method;
             this.uri = uri;
+            this.path = path;
             this.pathParts = pathParts;
             this.queryParams = queryParams;
             this.headers = headers;

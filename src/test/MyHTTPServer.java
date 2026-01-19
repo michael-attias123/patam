@@ -42,10 +42,15 @@ public class MyHTTPServer extends Thread implements HTTPServer {
     @Override
     public void run() {
         try (ServerSocket serverSocket = new ServerSocket(port)) {
+            // set short timeout so accept() can periodically wake and check `running`
+            serverSocket.setSoTimeout(1000);
             while (running) {
                 try {
                     Socket clientSocket = serverSocket.accept();
                     handleClient(clientSocket);
+                } catch (java.net.SocketTimeoutException ste) {
+                    // timeout used to re-check running flag
+                    continue;
                 } catch (IOException e) {
                     if (running) {
                         e.printStackTrace();
