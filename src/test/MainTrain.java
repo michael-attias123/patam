@@ -79,7 +79,7 @@ public class MainTrain { // RequestParser
         // baseline thread count
         int beforeThreads = Thread.activeCount();
 
-        MyHTTPServer server = new MyHTTPServer(port);
+        MyHTTPServer server = new MyHTTPServer(port, 3);
 
         // simple servlet that adds parameters a and b and returns the sum
         Servlet addServlet = new Servlet() {

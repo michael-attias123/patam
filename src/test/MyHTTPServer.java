@@ -11,11 +11,13 @@ import java.util.Map;
  */
 public class MyHTTPServer extends Thread implements HTTPServer {
     private final int port;
+    private final int nThreads;
     private final Map<String, Map<String, Servlet>> servlets;
     private boolean running;
 
-    public MyHTTPServer(int port) {
+    public MyHTTPServer(int port, int nThreads) {
         this.port = port;
+        this.nThreads = nThreads;
         this.servlets = new HashMap<>();
         this.running = false;
     }
